@@ -34,6 +34,7 @@ public class Board {
     int closedFields;
     int openFields;
 
+
     Status[][] cells;
 
 
@@ -191,47 +192,6 @@ public class Board {
             for (int x = 0; x < columns; x++) {
 
                 result.append(cells[x][y]);
-//                switch (cells[x][y]) {
-//                    case Status.BLOCK_MINE_EXPLODED:
-//                        result.append('O');
-//                        break;
-//                    case Status.BLOCK_FLAG:
-//                        result.append('X');
-//                        break;
-//                    case Status.BLOCK_CLOSED:
-//                        result.append('+');
-//                        break;
-//                    case Status.BLOCK_0:
-//                        result.append('.');
-//                        break;
-//                    case Status.BLOCK_1:
-//                        result.append('1');
-//                        break;
-//                    case Status.BLOCK_2:
-//                        result.append('2');
-//                        break;
-//                    case Status.BLOCK_1:
-//                        result.append('3');
-//                        break;
-//                    case Status.BLOCK_1:
-//                        result.append('4');
-//                        break;
-//                    case Status.BLOCK_1:
-//                        result.append('5');
-//                        break;
-//                    case Status.BLOCK_1:
-//                        result.append('6');
-//                        break;
-//                    case Status.BLOCK_1:
-//                        result.append('7');
-//                        break;
-//                    case Status.BLOCK_1:
-//                        result.append('8');
-//                        break;
-//                    case Status.BLOCK_1:
-//                        result.append('9');
-//                        break;
-//                }
 
             }
             result.append('\n');

@@ -7,7 +7,6 @@ import solver.model.Window;
 public class Main {
     public static void main(String[] args) {
 
-        System.out.println(Status.BLOCK_CLOSED);
         Window minesweeper = new Window();
         Board board = new Board(minesweeper, 9, 9, 10);
         System.out.println(board);
