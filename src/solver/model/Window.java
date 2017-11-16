@@ -8,6 +8,7 @@ public class Window {
 
     private static final int GRID_LINE_BRIGHTNESS = 20;
     private static final int GRID_FRAME_BRIGHTNESS = 200;
+    private static final int GRID_LINE_GAP = 10; //px
     int offsetx;
     int offsety;
     int width;
@@ -55,15 +56,21 @@ public class Window {
                 }
                 if (checkIfPixelDarker(wholeScreen.getRGB(x, y), GRID_LINE_BRIGHTNESS)) {
                     ArrayList<Point> darkSpots = new ArrayList<>();
+                    boolean flagBrightExist = true;
                     int tempx;
                     gridLoop:
                     for (int i = x; i < wholeScreen.getWidth() && (i - x + y) < wholeScreen.getHeight(); i++) {
-                        if (checkIfPixelDarker(wholeScreen.getRGB(i, (i - x + y)), GRID_LINE_BRIGHTNESS)) {
+                        Point tempPoint = new Point(i, (i - x + y));
+                        if (flagBrightExist &&
+                            checkIfPixelDarker(wholeScreen.getRGB(tempPoint.x, tempPoint.y), GRID_LINE_BRIGHTNESS) &&
+                            (darkSpots.size() == 0 ||
+                            darkSpots.get(darkSpots.size()-1).x > tempPoint.x + GRID_LINE_GAP))
+                        {
                             darkSpots.add(new Point( i, (i - x + y)));
+                            flagBrightExist = false;
                         }
                         if (checkIfPixelLighter(wholeScreen.getRGB(i, (i - x + y)), GRID_FRAME_BRIGHTNESS)) {
-                            break gridLoop;
-
+                            flagBrightExist = true;
                         }
                     }
                     if (darkSpots.size() > 0)
