@@ -162,7 +162,7 @@ public class Board {
         return false;
     }
 
-    public boolean setCells(Status[][] cells) {
+      public boolean setCells(Status[][] cells) {
         for (Status[] cell : cells) {
             if (cell.length != rows) {
                 return false;

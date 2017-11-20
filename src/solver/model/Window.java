@@ -9,15 +9,29 @@ public class Window {
     private static final int GRID_LINE_BRIGHTNESS = 20;
     private static final int GRID_FRAME_BRIGHTNESS = 200;
     private static final int GRID_LINE_GAP = 10; //px
+
+    private static final int GRID_SEARCH_AREA = 150; //px
+    private static final int CELL_MIN_SIZE = 16;
+    private static final float GRID_BRIGHTNESS = 0.3f;
+    private static final float CELL_BRIGHTNESS = 0.8f;
+
+    private static final int MIN_ROWS = 9;
+    private static final int MAX_ROWS = 24;
+    private static final int MIN_COLUMNS = 9;
+    private static final int MAX_COLUMNS = 30;
+
+    private static final float[] CELL_HUE_RANGE = { 0.50f , 0.64f };
     int offsetx;
     int offsety;
-    int width;
-    int height;
+    int cellwidth = 0;
+    int cellheight = 0;
+    int width = 0;
+    int height = 0;
 
     BufferedImage capture;
     private Rectangle boardRect;
 
-    public Window() {
+    public Window() throws InterruptedException {
 
         Robot robot = null;
 
@@ -40,84 +54,185 @@ public class Window {
 
         Point start = findOffset(wholeScreen);
 
+        if (start != null && findFieldSize(wholeScreen, start))
+        {
+            System.out.println("Window found!");
+        }
+
+
+
+
 
         this.boardRect = new Rectangle(offsetx, offsety, width, height);
         this.capture = robot.createScreenCapture(boardRect);
     }
 
-    private Point findOffset(BufferedImage wholeScreen) {
+    private boolean findFieldSize(BufferedImage wholeScreen, Point start)
+    {
+        width = 0;
+        height = 0;
+        if(cellheight != 0  && cellwidth != 0)
+        {
+
+            for (int x = start.x + cellwidth/2; x < wholeScreen.getWidth(); x += cellwidth) {
+                Color pixel = getColor(wholeScreen.getRGB(x,start.y + cellheight/2);
+                float[] pixelHSB = Color.RGBtoHSB(pixel.getRed(), pixel.getGreen(), pixel.getBlue(), null);
+                if (checkIfPixelInRangeOfHue(pixelHSB, CELL_HUE_RANGE) && checkIfPixelLighter(pixelHSB,CELL_BRIGHTNESS))
+                {
+                    width += cellwidth;
+                } else
+                {
+                    break;
+                }
+            }
+            for (int y = start.y + cellheight/2; y < wholeScreen.getHeight(); y += cellheight) {
+                Color pixel = getColor(wholeScreen.getRGB(start.x + cellwidth/2,y));
+                float[] pixelHSB = Color.RGBtoHSB(pixel.getRed(), pixel.getGreen(), pixel.getBlue(), null);
+                if (checkIfPixelInRangeOfHue(pixelHSB, CELL_HUE_RANGE) && checkIfPixelLighter(pixelHSB,CELL_BRIGHTNESS))
+                {
+                    height += cellheight;
+                } else
+                {
+                    break;
+                }
+            }
+
+            if (height != 0 && width != 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    private Point findOffset(BufferedImage wholeScreen) throws InterruptedException {
 
         for (int x = 0; x < wholeScreen.getWidth(); x++) {
             heightLoop:
             for (int y = 0; y < wholeScreen.getHeight(); y++) {
-                if (wholeScreen.getRGB(x, y) == 0xFFFF << 16)
+                // wholeScreen.getRGB(x,y) - single pixel on the screen
+
+                Color pixel = getColor(wholeScreen.getRGB(x,y));
+                float[] pixelHSB = Color.RGBtoHSB(pixel.getRed(), pixel.getGreen(), pixel.getBlue(), null);
+
+                if (checkIfPixelInRangeOfHue(pixelHSB, CELL_HUE_RANGE) && checkIfPixelLighter(pixelHSB,CELL_BRIGHTNESS))
                 {
-                    System.out.println("red dot!" + new Point(x,y));
-                }
-                if (checkIfPixelDarker(wholeScreen.getRGB(x, y), GRID_LINE_BRIGHTNESS)) {
-                    ArrayList<Point> darkSpots = new ArrayList<>();
-                    boolean flagBrightExist = true;
-                    int tempx;
-                    gridLoop:
-                    for (int i = x; i < wholeScreen.getWidth() && (i - x + y) < wholeScreen.getHeight(); i++) {
-                        Point tempPoint = new Point(i, (i - x + y));
-                        if (flagBrightExist &&
-                            checkIfPixelDarker(wholeScreen.getRGB(tempPoint.x, tempPoint.y), GRID_LINE_BRIGHTNESS) &&
-                            (darkSpots.size() == 0 ||
-                            darkSpots.get(darkSpots.size()-1).x > tempPoint.x + GRID_LINE_GAP))
+
+                    cellheight = 0;
+                    cellwidth = 0;
+                    searchGrid1:
+                    for (int i = 0; i < GRID_SEARCH_AREA && (y - i) > 0; i++) {
+
+                        pixel = getColor(wholeScreen.getRGB(x,y - i));
+                        pixelHSB = Color.RGBtoHSB(pixel.getRed(), pixel.getGreen(), pixel.getBlue(), null);
+
+                        if (checkIfPixelDarker(pixelHSB,GRID_BRIGHTNESS))
                         {
-                            darkSpots.add(new Point( i, (i - x + y)));
-                            flagBrightExist = false;
+                            cellheight += i;
+
+                            offsety = y - i;
+
+                            break searchGrid1;
                         }
-                        if (checkIfPixelLighter(wholeScreen.getRGB(i, (i - x + y)), GRID_FRAME_BRIGHTNESS)) {
-                            flagBrightExist = true;
+                        if (!checkIfPixelInRangeOfHue(pixelHSB,CELL_HUE_RANGE))
+                        {
+                            continue heightLoop;
                         }
                     }
-                    if (darkSpots.size() > 0)
-                        System.out.println("end of sequense, size: " + darkSpots.size());
-                    for (Point spot : darkSpots) {
-                        System.out.println(spot);
+                    searchGrid2:
+                    for (int i = 0; i < GRID_SEARCH_AREA && (y + i) < wholeScreen.getHeight(); i++) {
+
+                        pixel = getColor(wholeScreen.getRGB(x,y + i));
+                        pixelHSB = Color.RGBtoHSB(pixel.getRed(), pixel.getGreen(), pixel.getBlue(), null);
+
+                        if (checkIfPixelDarker(pixelHSB,GRID_BRIGHTNESS))
+                        {
+                            cellheight += i;
+                            break searchGrid2;
+                        }
+                        if (!checkIfPixelInRangeOfHue(pixelHSB,CELL_HUE_RANGE))
+                        {
+                            continue heightLoop;
+                        }
                     }
+                    searchGrid3:
+                    for (int i = 0; i < GRID_SEARCH_AREA && (x - i) > 0; i++) {
+
+                        pixel = getColor(wholeScreen.getRGB(x - i,y));
+                        pixelHSB = Color.RGBtoHSB(pixel.getRed(), pixel.getGreen(), pixel.getBlue(), null);
+
+                        if (checkIfPixelDarker(pixelHSB,GRID_BRIGHTNESS))
+                        {
+                            cellwidth += i;
+
+                            offsetx = x - i;
+
+                            break searchGrid3;
+                        }
+                        if (!checkIfPixelInRangeOfHue(pixelHSB,CELL_HUE_RANGE))
+                        {
+                            continue heightLoop;
+                        }
+                    }
+                    searchGrid4:
+                    for (int i = 0; i < GRID_SEARCH_AREA && (x + i) < wholeScreen.getWidth(); i++) {
+
+                        pixel = getColor(wholeScreen.getRGB(x + i,y));
+                        pixelHSB = Color.RGBtoHSB(pixel.getRed(), pixel.getGreen(), pixel.getBlue(), null);
+
+                        if (checkIfPixelDarker(pixelHSB,GRID_BRIGHTNESS))
+                        {
+                            cellwidth += i;
+                            break searchGrid4;
+                        }
+                        if (!checkIfPixelInRangeOfHue(pixelHSB,CELL_HUE_RANGE))
+                        {
+                            continue heightLoop;
+                        }
+                    }
+
+                    if (cellwidth < CELL_MIN_SIZE || cellheight < CELL_MIN_SIZE || Math.abs(cellwidth - cellheight) > Math.max(cellwidth,cellheight)/10)
+                    {
+                        continue heightLoop;
+                    }
+
+                    System.out.println("Dot Found!, coordinates: offsetx: " + offsetx + ", offsety: " + offsety + ", width: " + cellwidth + ", height: " + cellheight);
+
+                    // Block on the top finds left top offset point of game and now we must determine amount of fields;
+
+                    return new Point(offsetx, offsety);
 
 
                 }
+
             }
         }
         return null;
     }
 
-    private boolean checkIfPixelDarker(int rgb, int lightness) {
-        int[] l1;
-        int lightness1;
+    private Color getColor (int rgb)
+    {
+        Color color = new Color(rgb);
+        return color;
+    }
 
-        l1 = new int[3];
+    private boolean checkIfPixelInRangeOfHue(float[] hsb, float[] hue) {
+        if (hsb[0] > hue[0] && hsb[0] < hue[1]) {
+            return true;
+        }
 
-        l1[0] = (rgb >> 16) & 0xFF;
-        l1[1] = (rgb >> 8) & 0xFF;
-        l1[2] = rgb & 0xFF;
-
-        lightness1 = ((l1[0] + l1[1] + l1[2]) / 2);
-
-        if (lightness1 < lightness) {
+        return false;
+    }
+    private boolean checkIfPixelDarker(float[] hsb, float lightness) {
+        if (hsb[2] < lightness) {
             return true;
         }
 
         return false;
     }
 
-    private boolean checkIfPixelLighter(int rgb, int lightness) {
-        int[] l1;
-        int lightness1;
-
-        l1 = new int[3];
-
-        l1[0] = (rgb >> 16) & 0xFF;
-        l1[1] = (rgb >> 8) & 0xFF;
-        l1[2] = rgb & 0xFF;
-
-        lightness1 = ((l1[0] + l1[1] + l1[2]) / 2);
-
-        if (lightness1 > lightness) {
+    private boolean checkIfPixelLighter(float[] hsb, float lightness) {
+        if (hsb[2] > lightness) {
             return true;
         }
 
