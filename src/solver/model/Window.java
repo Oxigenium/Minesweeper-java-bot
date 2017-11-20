@@ -6,21 +6,24 @@ import java.util.ArrayList;
 
 public class Window {
 
-    private static final int GRID_LINE_BRIGHTNESS = 20;
-    private static final int GRID_FRAME_BRIGHTNESS = 200;
-    private static final int GRID_LINE_GAP = 10; //px
 
     private static final int GRID_SEARCH_AREA = 150; //px
     private static final int CELL_MIN_SIZE = 16;
-    private static final float GRID_BRIGHTNESS = 0.3f;
-    private static final float CELL_BRIGHTNESS = 0.8f;
 
     private static final int MIN_ROWS = 9;
     private static final int MAX_ROWS = 24;
     private static final int MIN_COLUMNS = 9;
     private static final int MAX_COLUMNS = 30;
 
-    private static final float[] CELL_HUE_RANGE = { 0.50f , 0.64f };
+
+    private static final float GRID_BRIGHTNESS = 0.3f;
+    private static final float CELL_BRIGHTNESS = 0.6f;
+    private static final float[] CELL_HUE_RANGE = { 0.50f , 0.7f };
+    private static final float[] CELL_CENTER_HUE_RANGE = { 0.50f , 0.7f };
+
+    private static final float CELL_CORNER_BRIGHTNESS = 0.6f;
+    private static final float[] CELL_CORNER_HUE_RANGE = { 0.62f , 0.7f };
+    private static final float[] CELL_CORNER_CENTER_HUE_RANGE = { 0.64f , 0.65f };
 
     int offsetx;
     int offsety;
@@ -56,10 +59,13 @@ public class Window {
         System.out.println("screen dimensions: " + wholeScreen.getWidth() + " : " + wholeScreen.getHeight());
 
         Point start = findOffset(wholeScreen);
+        Point[] fieldSize = null;
 
-        System.out.println(start);
+        if (start != null)
+        {
 
-        Point[] fieldSize = findFieldSize(wholeScreen, start, cellWidth);
+            fieldSize = findFieldSize(wholeScreen, start, cellWidth);
+        }
 
         if (start != null && fieldSize != null)
         {
@@ -78,10 +84,17 @@ public class Window {
             System.out.println("Window found! width: " + fieldSize[0].x + ", height: " + fieldSize[0].y + ", columns: " + fieldSize[1].x + ", rows: " + fieldSize[1].y);
             robot.mouseMove(start.x, start.y);
             Thread.sleep(2000);
-            robot.mouseMove(start.x + width, start.y + height);
+            robot.mouseMove(start.x - width, start.y - height);
             Thread.sleep(2000);
 //            robot.mouseMove(initialMousePosition.x, initialMousePosition.y);
+        } else if (fieldSize == null && start != null)
+        {
+            System.out.println("Start point is incorrect but found");
+            System.out.println(start);
+
+            robot.mouseMove(start.x, start.y);
         }
+
 
 
 
@@ -107,6 +120,7 @@ public class Window {
         }
 
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
         int width = 0;
         int height = 0;
 
@@ -115,49 +129,53 @@ public class Window {
         if(cellSide != 0)
         {
 
-            int columns = 1;
-            int rows = 1;
+            int columns = 0;
+            int rows = 0;
 
-            for (int x = start.x + cellSide/2; x < wholeScreen.getWidth(); x += cellSide) {
 
-                Point[] cellDimensions = isCell(wholeScreen, new Point(x, start.y + cellSide/2));
+
+            for (int x = start.x - cellSide/2; x >= 0; x -= cellSide) {
+
+                Point[] cellDimensions = isCell(wholeScreen, new Point(x, start.y - cellSide/2), false);
 
                 if (cellDimensions != null)
                 {
-                    width =  Math.abs(start.x - cellDimensions[1].x);
+                    width =  Math.abs(start.x - cellDimensions[0].x);
                     columns++;
 
-                    robot.mouseMove(x, start.y + cellSide/2);
-                    Thread.sleep(200);
+                    robot.mouseMove(x, start.y - cellSide/2);
+                    Thread.sleep(100);
 
                 } else
                 {
                     break;
                 }
             }
-            for (int y = start.y + cellSide/2; y < wholeScreen.getHeight(); y += cellSide) {
+            for (int y = start.y - cellSide/2; y >= 0; y -= cellSide) {
 
-                Point[] cellDimensions = isCell(wholeScreen, new Point(start.x + cellSide/2, y));
+                Point[] cellDimensions = isCell(wholeScreen, new Point(start.x - cellSide/2, y), false);
 
                 if (cellDimensions != null)
                 {
-                    height = Math.abs(start.y - cellDimensions[1].y);
+                    height = Math.abs(start.y - cellDimensions[0].y);
                     rows++;
 
-                    robot.mouseMove(start.x + cellSide/2, y);
-                    Thread.sleep(200);
+                    robot.mouseMove(start.x - cellSide/2, y);
+                    Thread.sleep(100);
                 } else
                 {
                     break;
                 }
             }
 
-            if (height != 0 &&
-                    width != 0 &&
-                    columns > MIN_COLUMNS &&
-                    columns < MAX_COLUMNS &&
-                    rows > MIN_ROWS &&
-                    rows < MAX_ROWS)
+            System.out.println("height: " + height + ", width: " + width + ", columns: " + columns + ", rows: " + rows);
+
+            if (height > 0 &&
+                    width > 0 &&
+                    columns >= MIN_COLUMNS &&
+                    columns <= MAX_COLUMNS &&
+                    rows >= MIN_ROWS &&
+                    rows <= MAX_ROWS)
             {
 
                 result[0] = new Point(width,height);
@@ -172,23 +190,39 @@ public class Window {
     }
     private Point findOffset(BufferedImage wholeScreen) {
 
-        for (int x = 0; x < wholeScreen.getWidth(); x++) {
+        for (int x = wholeScreen.getWidth() - 1; x >= 0; x--) {
             heightLoop:
-            for (int y = 0; y < wholeScreen.getHeight(); y++) {
+            for (int y = wholeScreen.getHeight() - 1; y >= 0; y--) {
                 // wholeScreen.getRGB(x,y) - single pixel on the screen
 
-                Point[] cellDimensions = isCell(wholeScreen, new Point(x,y));
+                Color pixel = getColor(wholeScreen.getRGB(x,y));
+                float[] pixelHSB = Color.RGBtoHSB(pixel.getRed(), pixel.getGreen(), pixel.getBlue(), null);
+                Point[] cellDimensions = null;
+
+                if (checkIfPixelInRangeOfHue(pixelHSB, CELL_CORNER_CENTER_HUE_RANGE) && checkIfPixelLighter(pixelHSB,CELL_CORNER_BRIGHTNESS))
+                {
+                    cellDimensions = isCell(wholeScreen, new Point(x,y), true);
+                }
 
 
                 if (cellDimensions != null)
                 {
+
                     System.out.println("WOW!");
                     cellWidth = cellDimensions[2].x;
                     cellHeight = cellDimensions[2].y;
-                    offsetx = cellDimensions[0].x;
-                    offsety = cellDimensions[0].y;
+                    offsetx = cellDimensions[1].x;
+                    offsety = cellDimensions[1].y;
 
-                    return cellDimensions[0];
+
+                    Point[] tempCellDimensions = isCell(wholeScreen, new Point(cellDimensions[0].x - cellWidth / 2,cellDimensions[1].y - cellWidth/2), false);
+
+                    if (tempCellDimensions != null)
+                    {
+                        cellWidth = cellDimensions[0].x - tempCellDimensions[0].x;
+                    }
+
+                    return cellDimensions[1];
                 }
 
             }
@@ -202,13 +236,29 @@ public class Window {
         return color;
     }
 
-    private Point[] isCell(BufferedImage wholeScreen, Point xy)
+    private Point[] isCell(BufferedImage wholeScreen, Point xy, boolean corner)
     {
+
+        final float[] range;
+        final float[] centerRange;
+        final float brightness;
+
+        if (corner)
+        {
+            centerRange = CELL_CORNER_CENTER_HUE_RANGE;
+            range = CELL_CORNER_HUE_RANGE;
+            brightness = CELL_CORNER_BRIGHTNESS;
+        } else
+        {
+            centerRange = CELL_CENTER_HUE_RANGE;
+            range = CELL_HUE_RANGE;
+            brightness = CELL_BRIGHTNESS;
+        }
 
         Color pixel = getColor(wholeScreen.getRGB(xy.x,xy.y));
         float[] pixelHSB = Color.RGBtoHSB(pixel.getRed(), pixel.getGreen(), pixel.getBlue(), null);
 
-        if (checkIfPixelInRangeOfHue(pixelHSB, CELL_HUE_RANGE) && checkIfPixelLighter(pixelHSB,CELL_BRIGHTNESS))
+        if (checkIfPixelInRangeOfHue(pixelHSB, centerRange) && checkIfPixelLighter(pixelHSB,brightness))
         {
             Point[] result = new Point[3];
 
@@ -236,7 +286,7 @@ public class Window {
 
                     break searchGrid1;
                 }
-                if (!checkIfPixelInRangeOfHue(pixelHSB,CELL_HUE_RANGE))
+                if (!checkIfPixelInRangeOfHue(pixelHSB,range))
                 {
                     return null;
                 }
@@ -255,7 +305,7 @@ public class Window {
 
                     break searchGrid2;
                 }
-                if (!checkIfPixelInRangeOfHue(pixelHSB,CELL_HUE_RANGE))
+                if (!checkIfPixelInRangeOfHue(pixelHSB,range))
                 {
                     return null;
                 }
@@ -274,7 +324,7 @@ public class Window {
 
                     break searchGrid3;
                 }
-                if (!checkIfPixelInRangeOfHue(pixelHSB,CELL_HUE_RANGE))
+                if (!checkIfPixelInRangeOfHue(pixelHSB,range))
                 {
                     return null;
                 }
@@ -289,11 +339,11 @@ public class Window {
                 {
                     cellWidth += i;
 
-                    rightBottomY = xy.x + i;
+                    rightBottomX = xy.x + i;
 
                     break searchGrid4;
                 }
-                if (!checkIfPixelInRangeOfHue(pixelHSB,CELL_HUE_RANGE))
+                if (!checkIfPixelInRangeOfHue(pixelHSB,range))
                 {
                     return null;
                 }
