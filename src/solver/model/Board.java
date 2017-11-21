@@ -17,6 +17,7 @@ public class Board {
     private static final int DEFAULT_ROWS = 9;
 
 
+
     class BoardException extends Exception {
 
         public BoardException(String message) {
@@ -39,6 +40,15 @@ public class Board {
 
 
     public Board(Window window) {
+
+
+        try {
+            if (window.getBoard() == null) throw new BoardException("I cant find the game!");
+
+        } catch (Board.BoardException e) {
+            System.err.println(e.getMessage());
+        }
+
         this.window = window;
         this.columns = DEFAULT_COLUMNS;
         this.rows = DEFAULT_ROWS;
@@ -53,13 +63,15 @@ public class Board {
     }
 
     public Board(Window window,
-                 int columns,
-                 int rows,
                  int maxMines) {
 
+        int columns = window.getColumns();
+        int rows = window.getRows();
+
         try {
+            if (window.getBoard() == null) throw new BoardException("I cant find the game!");
             if (columns < 9 || rows < 9) throw new BoardException("There is no such a small board exist");
-            if (columns > 30 || rows > 24) throw new BoardException("There is no such a small board exist");
+            if (columns > 30 || rows > 24) throw new BoardException("There is no such a big board exist");
             if (maxMines > 668 || maxMines > columns * rows) throw new BoardException("Too many mines for board");
             if (maxMines < 10) throw new BoardException("Too few mines for board");
 
@@ -79,12 +91,15 @@ public class Board {
     }
 
     public Board(Window window,
-                 int columns,
-                 int rows,
                  int maxMines,
                  int closedFields,
                  Status[][] cells) {
+
+        int columns = window.getColumns();
+        int rows = window.getRows();
+
         try {
+            if (window.getBoard() == null) throw new BoardException("I cant find the game!");
             if (columns < MIN_COLUMNS || rows < MIN_ROWS)
                 throw new BoardException("There is no such a small board possible");
             if (columns > MAX_COLUMNS || rows > MAX_ROWS)
@@ -191,7 +206,7 @@ public class Board {
         for (int y = 0; y < rows; y++) {
             for (int x = 0; x < columns; x++) {
 
-                result.append(cells[x][y]);
+                result.append(cells[x][y] + " ");
 
             }
             result.append('\n');

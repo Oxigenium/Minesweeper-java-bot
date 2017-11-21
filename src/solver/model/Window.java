@@ -6,7 +6,6 @@ import java.util.ArrayList;
 
 public class Window {
 
-
     private static final int GRID_SEARCH_AREA = 150; //px
     private static final int CELL_MIN_SIZE = 16;
 
@@ -25,17 +24,19 @@ public class Window {
     private static final float[] CELL_CORNER_HUE_RANGE = { 0.62f , 0.7f };
     private static final float[] CELL_CORNER_CENTER_HUE_RANGE = { 0.64f , 0.65f };
 
+
+    private static final boolean DEBUG_ROBOT = false;
+
     int offsetx;
     int offsety;
-    int cellWidth = 0;
-    int cellHeight = 0;
-    int width = 0;
-    int height = 0;
-    int columns = 0;
-    int rows = 0;
+    int cellSide;
+    int width;
+    int height;
+    int columns;
+    int rows;
 
-    BufferedImage capture;
-    private Rectangle boardRect;
+    BufferedImage board;
+    Rectangle boardRect;
 
     public Window() throws InterruptedException {
 
@@ -56,7 +57,11 @@ public class Window {
         }
 
         BufferedImage wholeScreen = robot.createScreenCapture(screenRect);
+
         System.out.println("screen dimensions: " + wholeScreen.getWidth() + " : " + wholeScreen.getHeight());
+
+
+        Point initialMousePosition = new Point(MouseInfo.getPointerInfo().getLocation().x, MouseInfo.getPointerInfo().getLocation().y);
 
         Point start = findOffset(wholeScreen);
         Point[] fieldSize = null;
@@ -64,44 +69,56 @@ public class Window {
         if (start != null)
         {
 
-            fieldSize = findFieldSize(wholeScreen, start, cellWidth);
+            fieldSize = findFieldSize(wholeScreen, start, cellSide);
         }
 
         if (start != null && fieldSize != null)
         {
 
-            offsetx = start.x;
-            offsety = start.y;
-
             width = fieldSize[0].x;
             height = fieldSize[0].y;
+
+            offsetx = start.x - width;
+            offsety = start.y - height;
 
             columns = fieldSize[1].x;
             rows = fieldSize[1].y;
 
-            Point initialMousePosition = new Point(MouseInfo.getPointerInfo().getLocation().x, MouseInfo.getPointerInfo().getLocation().y);
+            cellSide = width / columns;
 
             System.out.println("Window found! width: " + fieldSize[0].x + ", height: " + fieldSize[0].y + ", columns: " + fieldSize[1].x + ", rows: " + fieldSize[1].y);
-            robot.mouseMove(start.x, start.y);
-            Thread.sleep(2000);
-            robot.mouseMove(start.x - width, start.y - height);
-            Thread.sleep(2000);
-//            robot.mouseMove(initialMousePosition.x, initialMousePosition.y);
+
+            if (DEBUG_ROBOT) {
+                robot.mouseMove(start.x, start.y);
+                Thread.sleep(1500);
+                robot.mouseMove(start.x - width, start.y - height);
+                Thread.sleep(1500);
+                robot.mouseMove(initialMousePosition.x, initialMousePosition.y);
+            }
+
+            boardRect = new Rectangle(offsetx, offsety, width, height);
+            board = robot.createScreenCapture(boardRect);
+
+
         } else if (fieldSize == null && start != null)
         {
-            System.out.println("Start point is incorrect but found");
-            System.out.println(start);
+            boardRect = null;
+            board = null;
 
-            robot.mouseMove(start.x, start.y);
+            if (DEBUG_ROBOT) {
+                System.out.println("Start point is incorrect but found");
+                System.out.println(start);
+
+                robot.mouseMove(start.x, start.y);
+            }
+        } else
+        {
+            boardRect = null;
+            board = null;
+
         }
 
 
-
-
-
-
-//        this.boardRect = new Rectangle(offsetx, offsety, width, height);
-//        this.capture = robot.createScreenCapture(boardRect);
     }
 
     private Point[] findFieldSize(BufferedImage wholeScreen, Point start, int cellSide) throws InterruptedException
@@ -140,12 +157,15 @@ public class Window {
 
                 if (cellDimensions != null)
                 {
+                    x = cellDimensions[0].x + cellDimensions[2].x/2;
+
                     width =  Math.abs(start.x - cellDimensions[0].x);
                     columns++;
 
-                    robot.mouseMove(x, start.y - cellSide/2);
-                    Thread.sleep(100);
-
+                    if (DEBUG_ROBOT) {
+                        robot.mouseMove(x, start.y - cellSide / 2);
+                        Thread.sleep(150);
+                    }
                 } else
                 {
                     break;
@@ -157,18 +177,19 @@ public class Window {
 
                 if (cellDimensions != null)
                 {
+                    y = cellDimensions[0].y + cellDimensions[2].y/2;
+
                     height = Math.abs(start.y - cellDimensions[0].y);
                     rows++;
-
-                    robot.mouseMove(start.x - cellSide/2, y);
-                    Thread.sleep(100);
+                    if (DEBUG_ROBOT) {
+                        robot.mouseMove(start.x - cellSide / 2, y);
+                        Thread.sleep(150);
+                    }
                 } else
                 {
                     break;
                 }
             }
-
-            System.out.println("height: " + height + ", width: " + width + ", columns: " + columns + ", rows: " + rows);
 
             if (height > 0 &&
                     width > 0 &&
@@ -207,19 +228,16 @@ public class Window {
 
                 if (cellDimensions != null)
                 {
-
-                    System.out.println("WOW!");
-                    cellWidth = cellDimensions[2].x;
-                    cellHeight = cellDimensions[2].y;
+                    cellSide = cellDimensions[2].x;
                     offsetx = cellDimensions[1].x;
                     offsety = cellDimensions[1].y;
 
 
-                    Point[] tempCellDimensions = isCell(wholeScreen, new Point(cellDimensions[0].x - cellWidth / 2,cellDimensions[1].y - cellWidth/2), false);
+                    Point[] tempCellDimensions = isCell(wholeScreen, new Point(cellDimensions[0].x - cellSide / 2,cellDimensions[1].y - cellSide/2), false);
 
                     if (tempCellDimensions != null)
                     {
-                        cellWidth = cellDimensions[0].x - tempCellDimensions[0].x;
+                        cellSide = cellDimensions[0].x - tempCellDimensions[0].x;
                     }
 
                     return cellDimensions[1];
@@ -392,6 +410,40 @@ public class Window {
         return false;
     }
 
+    public int getOffsetx() {
+        return offsetx;
+    }
 
+    public int getOffsety() {
+        return offsety;
+    }
+
+    public int getCellSide() {
+        return cellSide;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public int getColumns() {
+        return columns;
+    }
+
+    public int getRows() {
+        return rows;
+    }
+
+    public BufferedImage getBoard() {
+        return board;
+    }
+
+    public Rectangle getBoardRect() {
+        return boardRect;
+    }
 }
 
