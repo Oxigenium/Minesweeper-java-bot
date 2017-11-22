@@ -1,3 +1,6 @@
 /.idea
 readme.md
 /misc
+
+/src/solver/research
+/out/production/Windows_Minesweeper_solver/solver/research

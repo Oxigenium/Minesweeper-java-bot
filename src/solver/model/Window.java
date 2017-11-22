@@ -25,7 +25,7 @@ public class Window {
     private static final float[] CELL_CORNER_CENTER_HUE_RANGE = { 0.64f , 0.65f };
 
 
-    private static final boolean DEBUG_ROBOT = false;
+    private static final boolean DEBUG_ROBOT = true;
 
     int offsetx;
     int offsety;
@@ -440,6 +440,26 @@ public class Window {
 
     public BufferedImage getBoard() {
         return board;
+    }
+
+    public void updateBoard(BufferedImage board) {
+
+        Robot robot = null;
+
+        try {
+
+            robot = new Robot();
+
+        } catch (AWTException e) {
+            e.printStackTrace();
+        }
+
+        if (robot != null)
+        {
+            board = robot.createScreenCapture(this.getBoardRect());
+        }
+
+        this.board = board;
     }
 
     public Rectangle getBoardRect() {

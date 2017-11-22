@@ -27,6 +27,11 @@ public class Main {
 
 
 
+        int c = getUserInput("column");
+        int r = getUserInput("row");
+
+        System.out.println("pixel hue is: ");
+        board.getCellStatus(new Point(c,r));
 
     }
 

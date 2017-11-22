@@ -177,6 +177,27 @@ public class Board {
         return false;
     }
 
+    public Status getCellStatus (Point cell)
+    {
+        if (!(cell.x >= 0 && cell.x < this.getColumns() && cell.y >= 0 && cell.y < this.getRows()))
+        {
+            return null;
+        }
+
+        Color cellCenter = getColor(window.getBoard().getRGB(window.getCellSide()/2 + cell.x * window.getCellSide(), window.getCellSide()/2 + cell.y * window.getCellSide()));
+        float[] pixelHSB = Color.RGBtoHSB(cellCenter.getRed(), cellCenter.getGreen(), cellCenter.getBlue(), null);
+
+        System.out.println(pixelHSB[0]);
+
+        return null;
+    }
+
+    private Color getColor (int rgb)
+    {
+        Color color = new Color(rgb);
+        return color;
+    }
+
       public boolean setCells(Status[][] cells) {
         for (Status[] cell : cells) {
             if (cell.length != rows) {
