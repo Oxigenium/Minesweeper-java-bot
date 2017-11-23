@@ -1,5 +1,6 @@
 package solver.controller;
 
+import javafx.application.Application;
 import solver.model.Board;
 import solver.model.Window;
 import solver.view.Overlay;
@@ -26,6 +27,17 @@ public class Main {
         System.out.println(board);
 
 
+        int[] dimensions = {
+                minesweeper.getOffsetx(),
+                minesweeper.getOffsety(),
+                minesweeper.getWidth(),
+                minesweeper.getHeight(),
+                minesweeper.getColumns(),
+                minesweeper.getRows()
+        };
+
+        Overlay.setDimensions(dimensions);
+        Application.launch(Overlay.class, args);
 
         int c = getUserInput("column");
         int r = getUserInput("row");
