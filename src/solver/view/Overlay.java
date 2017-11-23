@@ -5,14 +5,14 @@ import com.sun.jna.Native;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinUser;
 import javafx.application.Application;
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.text.Text;
-import javafx.stage.Screen;
+import javafx.scene.layout.RowConstraints;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
@@ -34,28 +34,52 @@ public class Overlay extends Application {
 
         String sTitle = "Minesweeper bot";
 
-        final StackPane root = new StackPane();
+        final GridPane grid = new GridPane();
 
-        root.setStyle("-fx-background-color: #FFFFFF;");
+        grid.setAlignment(Pos.CENTER);
+        grid.setPadding(new Insets(25, 25, 25, 25));
 
-//        grid.setAlignment(Pos.CENTER);
-//        grid.setHgap(10);
-//        grid.setVgap(10);
-//        grid.setPadding(new Insets(25, 25, 25, 25));
+        Label[][] digits = new Label[dimensions[4]][dimensions[5]];
+        ColumnConstraints[] columns = new ColumnConstraints[dimensions[4]];
+        RowConstraints[] rows = new RowConstraints[dimensions[5]];
+        int cellSide = dimensions[2]/dimensions[4];
+
+
+
+        for (int x = 0; x < dimensions[4]; x++) {
+            for (int y = 0; y < dimensions[5]; y++) {
+                digits[x][y] = new Label("0.21");
+                digits[x][y].setStyle("\n    -fx-font-size: " + cellSide/2.5 + "px;");
+                grid.add(digits[x][y], x, y);
+                GridPane.setHalignment(digits[x][y], HPos.CENTER);
+                if (x == 0)
+                {
+
+                    rows[y] = new RowConstraints(cellSide);
+                    grid.getRowConstraints().add(rows[y]);
+                }
+            }
+            columns[x] = new ColumnConstraints(cellSide);
+            grid.getColumnConstraints().add(columns[x]);
+        }
+
 
         primaryStage.setAlwaysOnTop(true);
+//        grid.setGridLinesVisible(true);
 
-        final Scene scene = new Scene(root, dimensions[2], dimensions[3], null);
+
+        final Scene scene = new Scene(grid, dimensions[2]+50, dimensions[3]+50, null);
         primaryStage.initStyle(StageStyle.TRANSPARENT);
 
         primaryStage.setScene(scene);
         primaryStage.setTitle(sTitle);
+
+        scene.getStylesheets().add
+                (Overlay.class.getResource("assets/styles/overlay.css").toExternalForm());
         primaryStage.show();
 
-
-        Rectangle2D primScreenBounds = Screen.getPrimary().getVisualBounds();
-        primaryStage.setX(dimensions[0]);
-        primaryStage.setY(dimensions[1]);
+        primaryStage.setX(dimensions[0]-25);
+        primaryStage.setY(dimensions[1]-25);
 
 
 //********************************************************************
@@ -67,7 +91,7 @@ public class Overlay extends Application {
         sTitle = title of the window
          */
 
-        boolean clickThrough = false;
+        boolean clickThrough = true;
 
         if (clickThrough) {
 

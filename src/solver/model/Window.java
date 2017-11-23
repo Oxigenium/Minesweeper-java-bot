@@ -90,9 +90,9 @@ public class Window {
 
             if (DEBUG_ROBOT) {
                 robot.mouseMove(start.x, start.y);
-                Thread.sleep(1500);
+                Thread.sleep(800);
                 robot.mouseMove(start.x - width, start.y - height);
-                Thread.sleep(1500);
+                Thread.sleep(800);
                 robot.mouseMove(initialMousePosition.x, initialMousePosition.y);
             }
 
@@ -164,7 +164,7 @@ public class Window {
 
                     if (DEBUG_ROBOT) {
                         robot.mouseMove(x, start.y - cellSide / 2);
-                        Thread.sleep(150);
+                        Thread.sleep(70);
                     }
                 } else
                 {
@@ -183,7 +183,7 @@ public class Window {
                     rows++;
                     if (DEBUG_ROBOT) {
                         robot.mouseMove(start.x - cellSide / 2, y);
-                        Thread.sleep(150);
+                        Thread.sleep(70);
                     }
                 } else
                 {

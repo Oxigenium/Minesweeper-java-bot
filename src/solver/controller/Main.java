@@ -35,9 +35,8 @@ public class Main {
                 minesweeper.getColumns(),
                 minesweeper.getRows()
         };
-
         Overlay.setDimensions(dimensions);
-        Application.launch(Overlay.class, args);
+        (new Thread(() -> Application.launch(Overlay.class, args))).start();
 
         int c = getUserInput("column");
         int r = getUserInput("row");
